@@ -1,4 +1,4 @@
-from preprocessing import do_analysis
+from data_analysis import do_analysis
 
 def main():
     do_analysis("datasets/sea_creatures/")
