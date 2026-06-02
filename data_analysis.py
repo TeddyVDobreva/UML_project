@@ -2,10 +2,26 @@ import os
 from collections import Counter
 from pathlib import Path
 
+import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from PIL import Image
+
+
+def _plot_gray_hist(images: list[Image], dataset_name) -> None:
+    """
+    Plots and saves the gray histogram of an image
+
+    Args:
+        images (list[Image]): a list of images
+    """
+    for i in range(len(images)):
+        g = cv2.cvtColor(np.array(images[i]), cv2.COLOR_BGR2GRAY)
+        plt.subplot(122), plt.hist(g.ravel(), 256, [0, 256], color="k")
+        plt.savefig(f"images/histograms_{dataset_name}/gray_histogram_{i}")
+        plt.close()
 
 
 def _open_image_files(path: str) -> list[Image]:
@@ -32,52 +48,33 @@ def _open_image_files(path: str) -> list[Image]:
     return images
 
 
-def _plot_image_dims(images: list[Image]) -> None:
+def _plot_image_dims(images: list[Image], dataset_name: str) -> None:
     """
     Plots the dimensions of the images in a dataset.
 
     Args:
         images (list[Image]): List of images for which to plot dimensions.
+        dataset_name (str): the name of the dataset
 
     Returns:
         None: Displays and saves the plots.
     """
     counter = Counter()
-    heights = Counter()
-    widths = Counter()
 
     for image in images:
         counter.update([image.size])
-        widths.update([image.size[0]])
-        heights.update([image.size[1]])
 
     # Plot resolutions
-    most_common = counter.most_common(50)
+    most_common = counter.most_common(15)
     resolutions = [f"{w[0]}x{w[1]}" for w, _ in most_common]
     counts = [c for _, c in most_common]
 
-    # Plot bar chart of top 50 resolutions
-    plt.figure()
+    # Plot bar chart of top 15 resolutions
+    plt.figure(figsize=(8, 6))
     plt.bar(resolutions, counts)
     plt.xticks(rotation=45)
-    plt.title(f"Top {50} Resolutions in Images")
-    plt.savefig("images/im_dimensions.png")
-    plt.close()
-
-    # Plot histogram of image heights
-    plt.figure()
-    plt.bar(heights.keys(), heights.values())
-    plt.xticks(rotation=45)
-    plt.title("Histogram of image heights")
-    plt.savefig("images/height_hist.png")
-    plt.close()
-
-    # Plot histogram of image widths
-    plt.figure()
-    plt.bar(widths.keys(), widths.values())
-    plt.xticks(rotation=45)
-    plt.title("Histogram of image widths")
-    plt.savefig("images/width_hist.png")
+    plt.title("Top 15 Resolutions in Images")
+    plt.savefig(f"images/im_dimensions_{dataset_name}.png")
     plt.close()
 
 
@@ -91,8 +88,10 @@ def do_analysis(path: str) -> None:
     Returns:
         None: Displays and saves the plots of image dimensions.
     """
+    dataset_name = path.split("/")[-1]
     images = _open_image_files(path)
-    _plot_image_dims(images)
+    _plot_image_dims(images, dataset_name)
+    # _plot_gray_hist(images, dataset_name)
 
 
 def plot_composition(dataset_name: str, dataset_path: str) -> None:
