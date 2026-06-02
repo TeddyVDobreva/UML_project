@@ -12,10 +12,13 @@ from PIL import Image
 
 def _plot_gray_hist(images: list[Image], dataset_name) -> None:
     """
-    Plots and saves the gray histogram of an image
+    Plots and saves the gray histogram of an image.
 
     Args:
-        images (list[Image]): a list of images
+        images (list[Image]): a list of images.
+
+    Returns:
+        None: Plots and saves the histogram.
     """
     for i in range(len(images)):
         g = cv2.cvtColor(np.array(images[i]), cv2.COLOR_BGR2GRAY)
@@ -29,10 +32,10 @@ def _open_image_files(path: str) -> list[Image]:
     Opens the image files in a directory.
 
     Args:
-        path (str): The path to a folder with the image data
+        path (str): The path to a folder with the image data.
 
     Returns:
-        list[Image]: List of all the images loaded from the provided path
+        list[Image]: List of all the images loaded from the provided path.
     """
     p = Path(path)
     images = []
@@ -54,7 +57,7 @@ def _plot_image_dims(images: list[Image], dataset_name: str) -> None:
 
     Args:
         images (list[Image]): List of images for which to plot dimensions.
-        dataset_name (str): the name of the dataset
+        dataset_name (str): the name of the dataset.
 
     Returns:
         None: Displays and saves the plots.
