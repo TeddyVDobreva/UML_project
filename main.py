@@ -1,5 +1,7 @@
+from preprocessing import do_analysis
+
 def main():
-    print("Hello from uml-project!")
+    do_analysis("datasets/sea_creatures/")
 
 
 if __name__ == "__main__":
