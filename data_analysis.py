@@ -10,40 +10,53 @@ from PIL import Image
 
 def _open_image_files(path: str) -> list[Image]:
     """
-    Opens the files in a directory
+    Opens the image files in a directory.
 
-    Parameters:
-        path (str): the path to a folder with the image data
+    Args:
+        path (str): The path to a folder with the image data
 
     Returns:
-        list[Image]: list of all the images loaded from the provided path
+        list[Image]: List of all the images loaded from the provided path
     """
     p = Path(path)
     images = []
-    # find an audio file in the dataset
+
+    # Find an image file in the dataset
     for file in p.rglob("*"):
         if file.is_file() and file.suffix.lower() in {".png", ".jpg"}:
             images.append(Image.open(file))
+
     if not images:
         raise FileNotFoundError(f"No images found in {p}")
 
     return images
 
 
-def _plot_image_dims(images):
+def _plot_image_dims(images: list[Image]) -> None:
+    """
+    Plots the dimensions of the images in a dataset.
+
+    Args:
+        images (list[Image]): List of images for which to plot dimensions.
+
+    Returns:
+        None: Displays and saves the plots.
+    """
     counter = Counter()
     heights = Counter()
     widths = Counter()
+
     for image in images:
         counter.update([image.size])
         widths.update([image.size[0]])
         heights.update([image.size[1]])
 
-    # plot resolutions
+    # Plot resolutions
     most_common = counter.most_common(50)
     resolutions = [f"{w[0]}x{w[1]}" for w, _ in most_common]
     counts = [c for _, c in most_common]
 
+    # Plot bar chart of top 50 resolutions
     plt.figure()
     plt.bar(resolutions, counts)
     plt.xticks(rotation=45)
@@ -51,7 +64,7 @@ def _plot_image_dims(images):
     plt.savefig("images/im_dimensions.png")
     plt.close()
 
-    # plot width and height histograms
+    # Plot histogram of image heights
     plt.figure()
     plt.bar(heights.keys(), heights.values())
     plt.xticks(rotation=45)
@@ -59,6 +72,7 @@ def _plot_image_dims(images):
     plt.savefig("images/height_hist.png")
     plt.close()
 
+    # Plot histogram of image widths
     plt.figure()
     plt.bar(widths.keys(), widths.values())
     plt.xticks(rotation=45)
@@ -67,7 +81,16 @@ def _plot_image_dims(images):
     plt.close()
 
 
-def do_analysis(path):
+def do_analysis(path: str) -> None:
+    """
+    Performs analysis on the images in a dataset by plotting their dimensions.
+
+    Args:
+        path (str): The path to a folder with the image data.
+
+    Returns:
+        None: Displays and saves the plots of image dimensions.
+    """
     images = _open_image_files(path)
     _plot_image_dims(images)
 
@@ -131,6 +154,10 @@ def plot_composition(dataset_name: str, dataset_path: str) -> None:
     plt.savefig(f"images/{dataset_name}_dataset_composition.png")
 
 
+# Running the analysis for both datasets
 if __name__ == "__main__":
     plot_composition("reptiles", "datasets/reptiles")
     plot_composition("sea_creatures", "datasets/sea_creatures")
+
+    do_analysis("datasets/reptiles")
+    do_analysis("datasets/sea_creatures")
