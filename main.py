@@ -1,6 +1,6 @@
-from data_analysis import do_analysis
 from preprocessing import preprocess
 from train import train_loop
+
 
 def main():
     # Preliminaru data analysis
@@ -12,8 +12,22 @@ def main():
     # reptiles_split = preprocess("datasets/reptiles")
     print("Preprocessing done!")
 
-    train_loop(sea_creatures_split[0], sea_creatures_split[3], sea_creatures_split[1], sea_creatures_split[4])
-    
+    # train the models
+    model_ce = train_loop(
+        sea_creatures_split[0],
+        sea_creatures_split[3],
+        sea_creatures_split[1],
+        sea_creatures_split[4],
+        "cross-entropy",
+    )
+    model_ln = train_loop(
+        sea_creatures_split[0],
+        sea_creatures_split[3],
+        sea_creatures_split[1],
+        sea_creatures_split[4],
+        "logit-normalization",
+    )
+
 
 if __name__ == "__main__":
     main()

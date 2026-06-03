@@ -2,16 +2,16 @@ import os
 import shutil
 import time
 
+import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
-from models import WideResNet
-import numpy as np
 import torchvision.transforms as transforms
-
+from models import WideResNet
 
 EPOCHS = 200
 BATCH_SIZE = 128
@@ -25,7 +25,21 @@ WIDE_LAYERS = 2
 DROPRATE = 0
 NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
-TRANS =  transform_train = transforms.Compose([transforms.ToTensor()])
+TRANS = transform_train = transforms.Compose([transforms.ToTensor()])
+
+# https://github.com/hongxin001/logitnorm_ood/blob/main/common/loss_function.py logit norm loss
+
+
+class LogitNormLoss(nn.Module):
+    def __init__(self, t=1.0):
+        super(LogitNormLoss, self).__init__()
+        self.t = t
+
+    def forward(self, x, target):
+        norms = torch.norm(x, p=2, dim=-1, keepdim=True) + 1e-7
+        logit_norm = torch.div(x, norms) / self.t
+        return F.cross_entropy(logit_norm, target)
+
 
 class ImageDataset(torch.utils.data.Dataset):
     def __init__(self, images: np.ndarray, labels: np.ndarray) -> None:
@@ -41,11 +55,13 @@ class ImageDataset(torch.utils.data.Dataset):
         # Turn image from HxWxC to CxHxW
         item = TRANS(self.images[idx])
 
-        label = self.labels[idx] # 0 negative, 1 positive
+        label = self.labels[idx]  # 0 negative, 1 positive
         return item, label
 
 
-def train_loop(train_images, train_labels, validation_images, validation_labels, loss = "CE"):
+def train_loop(
+    train_images, train_labels, validation_images, validation_labels, loss="CE"
+):
     # Data loading code
     best_prec1 = 0
     kwargs = {"num_workers": 1, "pin_memory": True}
@@ -78,19 +94,17 @@ def train_loop(train_images, train_labels, validation_images, validation_labels,
         )
     )
 
-    # for training on multiple GPUs.
-    # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
-    # model = torch.nn.DataParallel(model).cuda()
-    # model = model.cuda()
-
     cudnn.benchmark = True
 
     # define loss function (criterion) and optimizer
-    if loss == "CE":
+    if loss == "cross-entropy":
         criterion = nn.CrossEntropyLoss()
+    elif loss == "logit-normalization":
+        criterion = LogitNormLoss()
     else:
-        # IMPLEMENT LOG NORM LOSS
-        criterion = None
+        raise ValueError(
+            f'Loss should be one of "corss-entropy" or "logit-normalization" but {loss} was given'
+        )
     optimizer = torch.optim.SGD(
         model.parameters(),
         LR,
@@ -121,8 +135,11 @@ def train_loop(train_images, train_labels, validation_images, validation_labels,
                 "best_prec1": best_prec1,
             },
             is_best,
+            loss=loss,
         )
     print("Best accuracy: ", best_prec1)
+
+    return model
 
 
 def train(train_loader, model, criterion, optimizer, scheduler, epoch):
@@ -216,7 +233,9 @@ def validate(val_loader, model, criterion, epoch):
     return top1.avg
 
 
-def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
+def save_checkpoint(
+    state, is_best, filename="checkpoint.pth.tar", loss="cross-entropy"
+):
     """Saves checkpoint to disk"""
     directory = "runs/%s/" % (NAME)
     if not os.path.exists(directory):
@@ -224,7 +243,9 @@ def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
     filename = directory + filename
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, "runs/%s/" % (NAME) + "model_best.pth.tar")
+        shutil.copyfile(
+            filename, "runs/%s/" % (NAME) + "_" + (loss) + "model_best.pth.tar"
+        )
 
 
 class AverageMeter(object):
