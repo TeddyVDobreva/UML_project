@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
-IMG_SIZE = (64, 64)
+IMG_SIZE = (32, 32)
 EXCLUDE_CLASSES = {"Turtle_Tortoise"}
 
 

@@ -8,10 +8,10 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
-from wideresnet import WideResNet
+from models import WideResNet
 import numpy as np
+import torchvision.transforms as transforms
 
-from dataclasses import dataclass
 
 EPOCHS = 200
 BATCH_SIZE = 128
@@ -25,12 +25,7 @@ WIDE_LAYERS = 2
 DROPRATE = 0
 NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
-
-@dataclass
-class Batch:
-    x: torch.Tensor  # (B, T) images
-    y: torch.Tensor  # (B,) labels
-
+TRANS =  transform_train = transforms.Compose([transforms.ToTensor()])
 
 class ImageDataset(torch.utils.data.Dataset):
     def __init__(self, images: np.ndarray, labels: np.ndarray) -> None:
@@ -43,20 +38,14 @@ class ImageDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx: int) -> tuple:
         """Given an index, return the token ids and label for the corresponding sample."""
-        item = self.images[idx]
+        # Turn image from HxWxC to CxHxW
+        item = TRANS(self.images[idx])
 
         label = self.labels[idx] # 0 negative, 1 positive
         return item, label
 
 
-def collate(batch: list) -> Batch:
-    """Collate function to convert a list of samples into a batch."""
-    # batch: list of (image, label)
-    x = torch.full([x for x,_ in batch], dtype=torch.long)
-    y = torch.tensor([y for _, y in batch], dtype=torch.long)
-    return Batch(x=x, y=y)
-
-def train_loop(train_images, train_labels, validation_images, validation_labels):
+def train_loop(train_images, train_labels, validation_images, validation_labels, loss = "CE"):
     # Data loading code
     best_prec1 = 0
     kwargs = {"num_workers": 1, "pin_memory": True}
@@ -65,14 +54,12 @@ def train_loop(train_images, train_labels, validation_images, validation_labels)
         ImageDataset(train_images, train_labels),
         batch_size=BATCH_SIZE,
         shuffle=True,
-        collate_fn=collate,
         **kwargs,
     )
     val_loader = torch.utils.data.DataLoader(
         ImageDataset(validation_images, validation_labels),
         batch_size=BATCH_SIZE,
         shuffle=True,
-        collate_fn=collate,
         **kwargs,
     )
 
@@ -94,12 +81,16 @@ def train_loop(train_images, train_labels, validation_images, validation_labels)
     # for training on multiple GPUs.
     # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
     # model = torch.nn.DataParallel(model).cuda()
-    model = model.cuda()
+    # model = model.cuda()
 
     cudnn.benchmark = True
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda()
+    if loss == "CE":
+        criterion = nn.CrossEntropyLoss()
+    else:
+        # IMPLEMENT LOG NORM LOSS
+        criterion = None
     optimizer = torch.optim.SGD(
         model.parameters(),
         LR,
@@ -144,18 +135,18 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch):
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
-        target = target.cuda(non_blocking=True)
-        input = input.cuda(non_blocking=True)
+    for i, (inp, target) in enumerate(train_loader):
+        # target = target.cuda(non_blocking=True)
+        # input = input.cuda(non_blocking=True)
 
         # compute output
-        output = model(input)
+        output = model(inp)
         loss = criterion(output, target)
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data.item(), input.size(0))
-        top1.update(prec1.item(), input.size(0))
+        losses.update(loss.data.item(), inp.size(0))
+        top1.update(prec1.item(), inp.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -193,19 +184,19 @@ def validate(val_loader, model, criterion, epoch):
     model.eval()
 
     end = time.time()
-    for i, (input, target) in enumerate(val_loader):
-        target = target.cuda(non_blocking=True)
-        input = input.cuda(non_blocking=True)
+    for i, (inp, target) in enumerate(val_loader):
+        # target = target.cuda(non_blocking=True)
+        # input = input.cuda(non_blocking=True)
 
         # compute output
         with torch.no_grad():
-            output = model(input)
+            output = model(inp)
         loss = criterion(output, target)
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data.item(), input.size(0))
-        top1.update(prec1.item(), input.size(0))
+        losses.update(loss.data.item(), inp.size(0))
+        top1.update(prec1.item(), inp.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
