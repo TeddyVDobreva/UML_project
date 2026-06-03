@@ -11,6 +11,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
+
 from models import WideResNet
 
 TRANS = transform_train = transforms.Compose([transforms.ToTensor()])
@@ -32,6 +33,8 @@ class LogitNormLoss(nn.Module):
         Args:
             t (float): a temperature parameter that modulates the magnitude of the logits.
 
+        Returns:
+            None: Initializes the LogitNormLoss class.
         """
         super(LogitNormLoss, self).__init__()
         self.t = t
@@ -66,6 +69,9 @@ class ImageDataset(torch.utils.data.Dataset):
         Args:
             images (np.ndarray): an array with images.
             labels (np.ndarray): an array with labels corresponding to the images.
+
+        Returns:
+            None: Initializes the ImageDataset class.
         """
         self.images = images
         self.labels = labels
@@ -125,7 +131,7 @@ def train_loop(
         loss (str): the loss to be used in the training of the model.
 
     Returns:
-        WideResNet: the trained model
+        WideResNet: The trained model.
     """
     # Load the data.
     best_prec1 = 0
@@ -168,8 +174,9 @@ def train_loop(
         criterion = LogitNormLoss(lognorm_temperature)
     else:
         raise ValueError(
-            f'Loss should be one of "corss-entropy" or "logit-normalization" but {loss} was given'
+            f'Loss should be one of "cross-entropy" or "logit-normalization" but {loss} was given'
         )
+
     optimizer = torch.optim.SGD(
         model.parameters(),
         lr,
@@ -228,32 +235,35 @@ def train(
         scheduler (torch.optim.lr_scheduler.CosineAnnealingLR): the learnig rate scheduler to be use for the training.
         epoch (int): the number of the current epoch.
         print_freq (int): the number of epochs between printing results.
+
+    Returns:
+        None: Trains the model on epoch on the training set.
     """
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
 
-    # Switch to train mode.
+    # Switch to train mode
     model.train()
 
     end = time.time()
     for i, (inp, target) in enumerate(train_loader):
-        # Compute output.
+        # Compute output
         output = model(inp)
         loss = criterion(output, target)
 
-        # Measure accuracy and record loss.
+        # Measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         losses.update(loss.data.item(), inp.size(0))
         top1.update(prec1.item(), inp.size(0))
 
-        # Compute gradient and do SGD step.
+        # Compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         scheduler.step()
 
-        # Measure elapsed time.
+        # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
@@ -289,27 +299,30 @@ def validate(
         criterion (nn.Module): the loss to be use for the evaluation.
         epoch (int): the number of the current epoch.
         print_freq (int): the number of epochs between printing results.
+
+    Returns:
+        None: Evaluates the model on the validation set.
     """
     batch_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
 
-    # Switch to evaluate mode.
+    # Switch to evaluate mode
     model.eval()
 
     end = time.time()
     for i, (inp, target) in enumerate(val_loader):
-        # Compute output.
+        # Compute output
         with torch.no_grad():
             output = model(inp)
         loss = criterion(output, target)
 
-        # Measure accuracy and record loss.
+        # Measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         losses.update(loss.data.item(), inp.size(0))
         top1.update(prec1.item(), inp.size(0))
 
-        # Measure elapsed time.
+        # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
@@ -363,12 +376,24 @@ class AverageMeter:
     def __init__(self) -> None:
         """
         Constructor for the AverageMeter class.
+
+        Args:
+            None
+
+        Returns:
+            None: Initializes AverageMeter class.
         """
         self.reset()
 
     def reset(self) -> None:
         """
         Resets the average values to 0.
+
+        Args:
+            None
+
+        Returns:
+            None: Resets values to 0.
         """
         self.val = 0
         self.avg = 0
@@ -382,6 +407,9 @@ class AverageMeter:
         Args:
             val (float): current value
             n (int): the number of steps with the current value
+
+        Returns:
+            None: Updates values.
         """
         self.val = val
         self.sum += val * n
@@ -414,4 +442,34 @@ def accuracy(
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
+
     return res
+
+
+def get_scores(
+    model: WideResNet, images: np.ndarray, batch_size: int = 128
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Gets the predicted scores and predictions for a set of images.
+
+    Args:
+        model (WideResNet): the model for which to get the scores.
+        images (np.ndarray): the images for which to get the scores.
+        batch_size (int): the batch size to use when getting the scores.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: the predicted scores and predictions for the images.
+    """
+    model.eval()
+    dataset = ImageDataset(images, np.zeros(len(images)))
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    all_scores, all_preds = [], []
+    with torch.no_grad():
+        for inp, _ in loader:
+            logits = model(inp)
+            probs = torch.softmax(logits, dim=1)
+            all_scores.append(probs.max(dim=1).values.numpy())
+            all_preds.append(logits.argmax(dim=1).numpy())
+
+    return np.concatenate(all_scores), np.concatenate(all_preds)

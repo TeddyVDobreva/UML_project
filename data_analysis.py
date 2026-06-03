@@ -153,7 +153,6 @@ def plot_composition(dataset_name: str, dataset_path: str) -> None:
     plt.xlabel("Count", fontsize=14)
     plt.ylabel(f"{dataset_name.capitalize()} Species", fontsize=14)
     plt.grid(axis="x", linestyle="--", alpha=0.6)
-    plt.show()
     plt.savefig(f"images/{dataset_name}_dataset_composition.png")
 
 
