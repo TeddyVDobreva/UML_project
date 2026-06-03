@@ -92,9 +92,10 @@ def do_analysis(path: str) -> None:
         None: Displays and saves the plots of image dimensions.
     """
     dataset_name = path.split("/")[-1]
+    plot_composition(dataset_name, path)
     images = _open_image_files(path)
     _plot_image_dims(images, dataset_name)
-    # _plot_gray_hist(images, dataset_name)
+    _plot_gray_hist(images, dataset_name)
 
 
 def plot_composition(dataset_name: str, dataset_path: str) -> None:
@@ -158,8 +159,5 @@ def plot_composition(dataset_name: str, dataset_path: str) -> None:
 
 # Running the analysis for both datasets
 if __name__ == "__main__":
-    plot_composition("reptiles", "datasets/reptiles")
-    plot_composition("sea_creatures", "datasets/sea_creatures")
-
     do_analysis("datasets/reptiles")
     do_analysis("datasets/sea_creatures")
