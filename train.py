@@ -11,12 +11,9 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-
 from models import WideResNet
 
 TRANS = transform_train = transforms.Compose([transforms.ToTensor()])
-
-# https://github.com/hongxin001/logitnorm_ood/blob/main/common/loss_function.py logit norm loss
 
 
 class LogitNormLoss(nn.Module):
@@ -24,6 +21,7 @@ class LogitNormLoss(nn.Module):
     Class for Logit Normalization Loss.
 
     Inherits from nn.Module.
+    Implemented with code from https://github.com/hongxin001/logitnorm_ood/blob/main/common/loss_function.py
     """
 
     def __init__(self, t: float = 1.0) -> None:
@@ -212,7 +210,7 @@ def train_loop(
         )
     print("Best accuracy: ", best_prec1)
 
-    return model
+    return model, best_prec1
 
 
 def train(

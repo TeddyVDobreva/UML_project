@@ -7,17 +7,17 @@ from train import get_scores, train_loop
 
 EPOCHS = 200
 BATCH_SIZE = 128
-LR = 0.1
+LR = 0.1  # hp tuning 0.1, 0.05 0.01, 0.005, 0.001
 MOMENTUM = 0.9
 NESTEROV = True
 DECAY = 5e-4
 PRINT_FREQ = 10
 LAYERS = 40
 WIDE_LAYERS = 2
-DROPRATE = 0
+DROPRATE = 0.3
 NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
-LOGNORM_TEMP = 1
+LOGNORM_TEMP = 1  # hp tuning 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
 
     # Train the models and evaluate on the validation sets
     # ID models
-    ID_model_ce = train_loop(
+    ID_model_ce, _ = train_loop(
         sea_creatures_split[0],
         sea_creatures_split[3],
         sea_creatures_split[1],
@@ -54,7 +54,7 @@ def main():
         print_freq=PRINT_FREQ,
     )
 
-    ID_model_ln = train_loop(
+    ID_model_ln, _ = train_loop(
         sea_creatures_split[0],
         sea_creatures_split[3],
         sea_creatures_split[1],
@@ -76,7 +76,7 @@ def main():
     )
 
     # OOD models
-    OOD_model_ce = train_loop(
+    OOD_model_ce, _ = train_loop(
         reptiles_split[0],
         reptiles_split[3],
         reptiles_split[1],
@@ -97,7 +97,7 @@ def main():
         print_freq=PRINT_FREQ,
     )
 
-    OOD_model_ln = train_loop(
+    OOD_model_ln, _ = train_loop(
         reptiles_split[0],
         reptiles_split[3],
         reptiles_split[1],
