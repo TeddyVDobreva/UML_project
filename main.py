@@ -1,13 +1,12 @@
 import numpy as np
-
-from data_analysis import do_analysis
 from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95
+from hyperparameter_tuning import do_hyperparameter_evaluation
 from preprocessing import preprocess
 from train import get_scores, train_loop
 
 EPOCHS = 200
 BATCH_SIZE = 128
-LR = 0.1  # hp tuning 0.1, 0.05 0.01, 0.005, 0.001
+LR = 0.1
 MOMENTUM = 0.9
 NESTEROV = True
 DECAY = 5e-4
@@ -17,7 +16,10 @@ WIDE_LAYERS = 2
 DROPRATE = 0.3
 NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
-LOGNORM_TEMP = 1  # hp tuning 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05
+LOGNORM_TEMP = 1
+
+HP1 = {"lr": [0.1, 0.05, 0.01, 0.005, 0.001]}
+HP2 = {"lognorm_temperature": [0.001, 0.005, 0.01, 0.02, 0.05]}
 
 
 def main():
@@ -42,6 +44,28 @@ def main():
 
     print("Preprocessing done!")
 
+    # -------- Hyper-parameter tuning --------
+    do_hyperparameter_evaluation(
+        model_name=NAME,
+        hyperparameter1=HP1,
+        hyperparameter2=HP2,
+        train_images=ID_train_images,
+        train_labels=ID_train_labels,
+        validation_images=ID_val_images,
+        validation_labels=ID_val_labels,
+        loss="logit-normalization",
+        num_classes=NUM_CLASSES,
+        num_layers=LAYERS,
+        num_wide_layers=WIDE_LAYERS,
+        droprate=DROPRATE,
+        decay=DECAY,
+        optimizer_momentum=MOMENTUM,
+        nesterov=NESTEROV,
+        batch_size=BATCH_SIZE,
+        epochs=EPOCHS,
+        print_freq=PRINT_FREQ,
+    )
+    
     # -------- Training the models and evaluate on the validation sets --------
     # ID models
     ID_model_ce, _ = train_loop(
