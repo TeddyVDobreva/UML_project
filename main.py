@@ -21,11 +21,6 @@ LOGNORM_TEMP = 1  # hp tuning 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05
 
 
 def main():
-    # -------- Preliminary data analysis --------
-    do_analysis("datasets/sea_creatures")
-    do_analysis("datasets/reptiles")
-    print("Analysis done!")
-
     # -------- Data Preprocessing --------
     (
         ID_train_images,
@@ -91,49 +86,6 @@ def main():
         print_freq=PRINT_FREQ,
     )
 
-    # OOD models
-    OOD_model_ce, _ = train_loop(
-        OOD_train_images,
-        OOD_train_labels,
-        OOD_val_images,
-        ID_val_labels,  # !!!!!!!!!!!!!!!!!!!!!!
-        loss="cross-entropy",
-        num_classes=NUM_CLASSES,
-        model_name=NAME,
-        num_layers=LAYERS,
-        num_wide_layers=WIDE_LAYERS,
-        droprate=DROPRATE,
-        lr=LR,
-        decay=DECAY,
-        optimizer_momentum=MOMENTUM,
-        nesterov=NESTEROV,
-        lognorm_temperature=LOGNORM_TEMP,
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
-        print_freq=PRINT_FREQ,
-    )
-
-    OOD_model_ln, _ = train_loop(
-        OOD_train_images,
-        OOD_train_labels,
-        OOD_val_images,
-        ID_val_labels,
-        loss="logit-normalization",
-        num_classes=NUM_CLASSES,
-        model_name=NAME,
-        num_layers=LAYERS,
-        num_wide_layers=WIDE_LAYERS,
-        droprate=DROPRATE,
-        lr=LR,
-        decay=DECAY,
-        optimizer_momentum=MOMENTUM,
-        nesterov=NESTEROV,
-        lognorm_temperature=LOGNORM_TEMP,
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
-        print_freq=PRINT_FREQ,
-    )
-
     # ---------------- Evaluate the models ----------------
 
     # Generate the true labels for the combined ID and OOD test sets
@@ -145,10 +97,9 @@ def main():
     ID_scores_ce, ID_preds_ce = get_scores(ID_model_ce, ID_test_images)
     ID_scores_ln, ID_preds_ln = get_scores(ID_model_ln, ID_test_images)
 
-    OOD_scores_ce, _ = get_scores(OOD_model_ce, OOD_test_images)
-    OOD_scores_ln, _ = get_scores(OOD_model_ln, OOD_test_images)
+    OOD_scores_ce, OOD_preds_ce = get_scores(ID_model_ce, OOD_test_images)
+    OOD_scores_ln, OOD_preds_ln = get_scores(ID_model_ln, OOD_test_images)
 
-    # Combine the scores for the ID and OOD test sets
     combined_scores_ce = np.concatenate([ID_scores_ce, OOD_scores_ce])
     combined_scores_ln = np.concatenate([ID_scores_ln, OOD_scores_ln])
 
@@ -156,7 +107,6 @@ def main():
     eval_fpr95(
         ID_test_labels,
         ID_scores_ce,
-        "cross_entropy",
         OOD_test_labels,
         OOD_scores_ce,
         "cross_entropy",
@@ -164,7 +114,6 @@ def main():
     eval_fpr95(
         ID_test_labels,
         ID_scores_ln,
-        "logit_normalization",
         OOD_test_labels,
         OOD_scores_ln,
         "logit_normalization",
@@ -173,6 +122,7 @@ def main():
     # AUROC
     eval_auroc(y_OOD, combined_scores_ce, "cross entropy")
     eval_auroc(y_OOD, combined_scores_ln, "logit normalization")
+
     # AUPR
     eval_aupr(y_OOD, combined_scores_ce, "cross entropy")
     eval_aupr(y_OOD, combined_scores_ln, "logit normalization")

@@ -22,7 +22,9 @@ def _plot_gray_hist(images: list[Image], dataset_name) -> None:
     """
     for i in range(len(images)):
         g = cv2.cvtColor(np.array(images[i]), cv2.COLOR_BGR2GRAY)
-        plt.subplot(122), plt.hist(g.ravel(), 256, [0, 256], color="k")
+        plt.subplot(122)
+        plt.hist(g.ravel(), 256, [0, 256], color="k")
+        os.makedirs("./images", exist_ok=True)
         plt.savefig(f"images/histograms_{dataset_name}/gray_histogram_{i}")
         plt.close()
 

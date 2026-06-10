@@ -17,6 +17,21 @@ from models import WideResNet
 TRANS = transform_train = transforms.Compose([transforms.ToTensor()])
 
 
+def set_seed(seed: int = 42) -> None:
+    """
+    Sets the random seed for reproducibility across numpy, torch, and cuda.
+
+    Args:
+        seed (int = 42): The random seed value.
+
+    Returns:
+        None: Sets the random seed for reproducibility.
+    """
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
 class LogitNormLoss(nn.Module):
     """
     Class for Logit Normalization Loss.
@@ -148,6 +163,8 @@ def train_loop(
     Returns:
         tuple[WideResNet, float]: The trained model and the best accuracy.
     """
+    set_seed()
+
     # Load the data.
     best_prec1 = 0
     kwargs = {"num_workers": 1, "pin_memory": True}
@@ -443,7 +460,7 @@ def accuracy(
 
     Args:
         output (torch.Tensor): the outputed predictions of the model.
-        target (torch.Tensor): the target labels. Defaults to the true labels.
+        target (torch.Tensor): the target labels.
         topk (tuple): tuple of k values.
 
     Returns:

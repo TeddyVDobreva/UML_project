@@ -28,10 +28,9 @@ def load_df(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> pd.DataFr
 def eval_fpr95(
     ID_y_test: np.ndarray,
     ID_scores: np.ndarray,
-    ID_loss_name: str,
     OOD_y_test: np.ndarray,
     OOD_scores: np.ndarray,
-    OOD_loss_name: str,
+    loss_name: str,
 ) -> str:
     """
     Evaluation metric that shows the false positive rate (FPR) of OOD examples,
@@ -40,10 +39,9 @@ def eval_fpr95(
     Args:
         ID_y_test (np.ndarray): the true labels for the ID test set.
         ID_scores (np.ndarray): the predicted scores for the ID test set.
-        ID_loss_name (str): the name of the ID loss function.
         OOD_y_test (np.ndarray): the true labels for the OOD test set.
         OOD_scores (np.ndarray): the predicted scores for the OOD test set.
-        OOD_loss_name (str): the name of the OOD loss function.
+        loss_name (str): the name of the loss function.
 
     Returns:
         str: the FPR95 score.
@@ -54,7 +52,7 @@ def eval_fpr95(
     fpr, tpr, _ = roc_curve(y_true, y_scores)
     fpr95 = fpr[np.where(tpr >= 0.95)[0][0]]
 
-    return f"FPR95 for WRN with {OOD_loss_name} loss: {fpr95:.4f}"
+    return f"FPR95 for WRN with {loss_name} loss: {fpr95:.4f}"
 
 
 def eval_auroc(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
