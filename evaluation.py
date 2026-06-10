@@ -135,4 +135,5 @@ def eval_acc(y_test: np.ndarray, preds: np.ndarray, loss_name: str) -> str:
     test_df = load_df(y_test, preds, loss_name)
 
     acc = accuracy_score(test_df["True"], test_df[f"{loss_name}"])
+
     return f"Accuracy for {loss_name}: {acc:.4f}"

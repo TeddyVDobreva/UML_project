@@ -11,6 +11,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
+
 from models import WideResNet
 
 TRANS = transform_train = transforms.Compose([transforms.ToTensor()])
@@ -117,7 +118,7 @@ def train_loop(
     batch_size: int = 128,
     epochs: int = 200,
     print_freq: int = 10,
-) -> WideResNet:
+) -> tuple[WideResNet, float]:
     """
     A function for initialization, training, and evaluation on validation dataset.
 
@@ -126,10 +127,26 @@ def train_loop(
         train_labels (np.ndarray): the corresponding labels of the images in the training dataset.
         validation_images(np.ndarray): the images in the validation dataset.
         validation_labels (np.ndarray): the corresponding labels of the images in the validation dataset.
-        loss (str): the loss to be used in the training of the model.
+        num_classes (int): the number of classes in the dataset. Defaults to 22.
+        model_name (str): the name with which to save the model. Defaults to "model".
+        num_layers (int): the number of layers in the model. Defaults to 40.
+        num_wide_layers (int): the number of wide layers in the model. Defaults to 2.
+        droprate (float): the drop rate to be used in the model. Defaults to 0.
+        lr (float): the learning rate to be used in the training. Defaults to 0.1.
+        decay (float): the weight decay to be used in the training. Defaults to 5e-4.
+        optimizer_momentum (float): the momentum to be used in the optimizer for the training.
+            Defaults to 0.9.
+        nesterov (bool): whether to use nesterov momentum in the optimizer for the training.
+            Defaults to True.
+        loss (str): the loss to be used in the training of the model. Defaults to "cross-entropy".
+        lognorm_temperature (float): the temperature to be used in the logit normalization loss.
+            Defaults to 1.
+        batch_size (int): the batch size to be used in the training. Defaults to 128.
+        epochs (int): the number of epochs for which to train the model. Defaults to 200.
+        print_freq (int): the number of epochs between printing results. Defaults to 10.
 
     Returns:
-        WideResNet: The trained model.
+        tuple[WideResNet, float]: The trained model and the best accuracy.
     """
     # Load the data.
     best_prec1 = 0
@@ -193,7 +210,7 @@ def train_loop(
         train(train_loader, model, criterion, optimizer, scheduler, epoch, print_freq)
 
         # Evaluate the model on the validation set.
-        prec1 = validate(val_loader, model, criterion, epoch, print_freq)
+        prec1 = validate(val_loader, model, criterion, print_freq)
 
         # Remember best prec@1 and save checkpoint.
         is_best = prec1 > best_prec1
@@ -217,7 +234,7 @@ def train(
     train_loader: torch.utils.data.DataLoader,
     model: WideResNet,
     criterion: nn.Module,
-    optimizer: torch.optimizer.SGD,
+    optimizer: torch.optim.SGD,
     scheduler: torch.optim.lr_scheduler.CosineAnnealingLR,
     epoch: int,
     print_freq: int,
@@ -229,7 +246,7 @@ def train(
         train_loader (torch.utils.data.DataLoader): the data loader with the images and true labels.
         model (WideResNet): the model to be trained.
         criterion (nn.Module): the loss to be use for the training.
-        optimizer (torch.optimizer.SGD): the optimizer to be use for the training.
+        optimizer (torch.optim.SGD): the optimizer to be use for the training.
         scheduler (torch.optim.lr_scheduler.CosineAnnealingLR): the learnig rate scheduler to be use for the training.
         epoch (int): the number of the current epoch.
         print_freq (int): the number of epochs between printing results.
@@ -285,21 +302,19 @@ def validate(
     val_loader: torch.utils.data.DataLoader,
     model: WideResNet,
     criterion: nn.Module,
-    epoch: int,
     print_freq: int,
-) -> None:
+) -> float:
     """
-    Perform validation on the validation dataset.
+    Performs validation on the validation dataset.
 
     Args:
         val_loader (torch.utils.data.DataLoader): the data loader with the images and true labels.
         model (WideResNet): the model to be evaluated.
         criterion (nn.Module): the loss to be use for the evaluation.
-        epoch (int): the number of the current epoch.
         print_freq (int): the number of epochs between printing results.
 
     Returns:
-        None: Evaluates the model on the validation set.
+        float: The accuracy of the model on the validation set.
     """
     batch_time = AverageMeter()
     losses = AverageMeter()
@@ -353,13 +368,18 @@ def save_checkpoint(
         is_best (bool): True if the data is about the epoch with the best perfromance.
         filename (str): The file to which to save the checkpoint.
         loss (str): The name of the loss function.
-        model_name (str): the name with which to save the model
+        model_name (str): the name with which to save the model.
+
+    Returns:
+        None: Saves the checkpoint to disk.
     """
     directory = "runs/%s/" % (model_name)
+
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = directory + filename
     torch.save(state, filename)
+
     if is_best:
         shutil.copyfile(
             filename, "runs/%s/" % (model_name) + "_" + (loss) + "model_best.pth.tar"
@@ -423,11 +443,11 @@ def accuracy(
 
     Args:
         output (torch.Tensor): the outputed predictions of the model.
-        target (torch.Tensor): the target labels.
-        topk (tuple): tuple of k values
+        target (torch.Tensor): the target labels. Defaults to the true labels.
+        topk (tuple): tuple of k values.
 
     Returns:
-        list[float]: the accuracy for all topk values
+        list[float]: the accuracy for all topk values.
     """
     maxk = max(topk)
     batch_size = target.size(0)

@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+
 from train import train_loop
 
 
@@ -30,8 +31,12 @@ def do_hyperparameter_evaluation(
         validation_images(np.ndarray): the images in the validation dataset.
         validation_labels (np.ndarray): the corresponding labels of the images in the validation dataset.
         **kwargs: Arguments that the models share during the training.
+
+    Returns:
+        None: Trains and evaluates the models for each hyperparameter combination,
+            then saves the results in a heatmap.
     """
-    print("Hyper parameter tuning started")
+    print("Started hyper parameter tuning")
     hp1_name = list(hyperparameter1.keys())[0]
     hp2_name = list(hyperparameter2.keys())[0]
 
@@ -68,12 +73,16 @@ def make_heatmap(
     hyperparameter2: dict[str, list],
 ) -> None:
     """
-    Saves the accuracy matrix by using a heatmap, which shows how performance varies for the models when using different hyperparameters.
+    Saves the accuracy matrix by using a heatmap, which shows how performance varies for the models
+        when using different hyperparameters.
 
     Args:
         accuracy_matrix: np.ndarray: 2D matrix containing accuracies for each hyperparameter combination.
         hyperparameter1: dict[str, list]- Dictionary containing the 1st hyperparameter name and values.
         hyperparameter2: dict[str, list]- Dictionary containing the 2nd hyperparameter name and values.
+
+    Returns:
+        None: Saves the heatmap of the accuracy matrix.
     """
     Path("images").mkdir(exist_ok=True)
 

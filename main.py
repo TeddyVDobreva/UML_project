@@ -21,23 +21,39 @@ LOGNORM_TEMP = 1  # hp tuning 0.001, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05
 
 
 def main():
-    # Preliminaru data analysis
+    # -------- Preliminary data analysis --------
     do_analysis("datasets/sea_creatures")
     do_analysis("datasets/reptiles")
     print("Analysis done!")
 
-    # Preprocessing
-    sea_creatures_split = preprocess("datasets/sea_creatures")
-    reptiles_split = preprocess("datasets/reptiles")
+    # -------- Data Preprocessing --------
+    (
+        ID_train_images,
+        ID_val_images,
+        ID_test_images,
+        ID_train_labels,
+        ID_val_labels,
+        ID_test_labels,
+    ) = preprocess("datasets/sea_creatures")
+
+    (
+        OOD_train_images,
+        OOD_val_images,
+        OOD_test_images,
+        OOD_train_labels,
+        OOD_val_labels,
+        OOD_test_labels,
+    ) = preprocess("datasets/reptiles")
+
     print("Preprocessing done!")
 
-    # Train the models and evaluate on the validation sets
+    # -------- Training the models and evaluate on the validation sets --------
     # ID models
     ID_model_ce, _ = train_loop(
-        sea_creatures_split[0],
-        sea_creatures_split[3],
-        sea_creatures_split[1],
-        sea_creatures_split[4],
+        ID_train_images,
+        ID_train_labels,
+        ID_val_images,
+        ID_val_labels,
         loss="cross-entropy",
         num_classes=NUM_CLASSES,
         model_name=NAME,
@@ -55,10 +71,10 @@ def main():
     )
 
     ID_model_ln, _ = train_loop(
-        sea_creatures_split[0],
-        sea_creatures_split[3],
-        sea_creatures_split[1],
-        sea_creatures_split[4],
+        ID_train_images,
+        ID_train_labels,
+        ID_val_images,
+        ID_val_labels,
         loss="logit-normalization",
         num_classes=NUM_CLASSES,
         model_name=NAME,
@@ -77,10 +93,10 @@ def main():
 
     # OOD models
     OOD_model_ce, _ = train_loop(
-        reptiles_split[0],
-        reptiles_split[3],
-        reptiles_split[1],
-        sea_creatures_split[4],
+        OOD_train_images,
+        OOD_train_labels,
+        OOD_val_images,
+        ID_val_labels,  # !!!!!!!!!!!!!!!!!!!!!!
         loss="cross-entropy",
         num_classes=NUM_CLASSES,
         model_name=NAME,
@@ -98,10 +114,10 @@ def main():
     )
 
     OOD_model_ln, _ = train_loop(
-        reptiles_split[0],
-        reptiles_split[3],
-        reptiles_split[1],
-        sea_creatures_split[4],
+        OOD_train_images,
+        OOD_train_labels,
+        OOD_val_images,
+        ID_val_labels,
         loss="logit-normalization",
         num_classes=NUM_CLASSES,
         model_name=NAME,
@@ -118,18 +134,19 @@ def main():
         print_freq=PRINT_FREQ,
     )
 
-    # Evaluate the models
+    # ---------------- Evaluate the models ----------------
+
     # Generate the true labels for the combined ID and OOD test sets
     y_OOD = np.concatenate(
-        [np.ones(len(sea_creatures_split[5])), np.zeros(len(reptiles_split[5]))]
+        [np.ones(len(ID_test_labels)), np.zeros(len(OOD_test_labels))]
     )
 
     # Get the predicted scores for the ID and OOD test sets
-    ID_scores_ce, ID_preds_ce = get_scores(ID_model_ce, sea_creatures_split[2])
-    ID_scores_ln, ID_preds_ln = get_scores(ID_model_ln, sea_creatures_split[2])
+    ID_scores_ce, ID_preds_ce = get_scores(ID_model_ce, ID_test_images)
+    ID_scores_ln, ID_preds_ln = get_scores(ID_model_ln, ID_test_images)
 
-    OOD_scores_ce, _ = get_scores(OOD_model_ce, reptiles_split[2])
-    OOD_scores_ln, _ = get_scores(OOD_model_ln, reptiles_split[2])
+    OOD_scores_ce, _ = get_scores(OOD_model_ce, OOD_test_images)
+    OOD_scores_ln, _ = get_scores(OOD_model_ln, OOD_test_images)
 
     # Combine the scores for the ID and OOD test sets
     combined_scores_ce = np.concatenate([ID_scores_ce, OOD_scores_ce])
@@ -137,18 +154,18 @@ def main():
 
     # FPR95
     eval_fpr95(
-        sea_creatures_split[5],
+        ID_test_labels,
         ID_scores_ce,
         "cross_entropy",
-        reptiles_split[5],
+        OOD_test_labels,
         OOD_scores_ce,
         "cross_entropy",
     )
     eval_fpr95(
-        sea_creatures_split[5],
+        ID_test_labels,
         ID_scores_ln,
         "logit_normalization",
-        reptiles_split[5],
+        OOD_test_labels,
         OOD_scores_ln,
         "logit_normalization",
     )
@@ -161,8 +178,8 @@ def main():
     eval_aupr(y_OOD, combined_scores_ln, "logit normalization")
 
     # Accuracy of the model on the ID test set
-    eval_acc(sea_creatures_split[5], ID_preds_ce, "cross entropy")
-    eval_acc(sea_creatures_split[5], ID_preds_ln, "logit normalization")
+    eval_acc(ID_test_labels, ID_preds_ce, "cross entropy")
+    eval_acc(ID_test_labels, ID_preds_ln, "logit normalization")
 
 
 # Run the main function
