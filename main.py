@@ -4,8 +4,8 @@ from hyperparameter_tuning import do_hyperparameter_evaluation
 from preprocessing import preprocess
 from train import get_scores, train_loop
 
-EPOCHS = 200
-BATCH_SIZE = 128
+EPOCHS = 100
+BATCH_SIZE = 1024
 LR = 0.1
 MOMENTUM = 0.9
 NESTEROV = True
@@ -18,8 +18,8 @@ NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
 LOGNORM_TEMP = 1
 
-HP1 = {"lr": [0.1, 0.05, 0.01, 0.005, 0.001]}
-HP2 = {"lognorm_temperature": [0.001, 0.005, 0.01, 0.02, 0.05]}
+HP1 = {"lr": [0.001, 0.01, 0.1]}
+HP2 = {"lognorm_temperature": [0.01, 0.02, 0.05]}
 
 
 def main():

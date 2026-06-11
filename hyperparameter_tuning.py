@@ -46,7 +46,7 @@ def do_hyperparameter_evaluation(
 
     for i, hp1 in enumerate(hyperparameter1[hp1_name]):
         print(f"Current {hp1_name}: {hp1}")
-
+        validation_precision = 0
         for j, hp2 in enumerate(hyperparameter2[hp2_name]):
             print(f"Current {hp2_name}: {hp2}")
             hyperparameter_dic = {hp2_name: hp2}
@@ -62,7 +62,7 @@ def do_hyperparameter_evaluation(
             )
 
             accuracy_matrix[i, j] = validation_precision
-        print()
+        print(validation_precision)
 
     make_heatmap(accuracy_matrix, hyperparameter1, hyperparameter2)
 
