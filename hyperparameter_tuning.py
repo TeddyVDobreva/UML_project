@@ -47,9 +47,10 @@ def do_hyperparameter_evaluation(
     for i, hp1 in enumerate(hyperparameter1[hp1_name]):
         print(f"Current {hp1_name}: {hp1}")
         validation_precision = 0
+
         for j, hp2 in enumerate(hyperparameter2[hp2_name]):
             print(f"Current {hp2_name}: {hp2}")
-            hyperparameter_dic = {hp2_name: hp2}
+            hyperparameter_dic = {hp1_name: hp1, hp2_name: hp2}
 
             model, validation_precision = train_loop(
                 train_images,
@@ -62,7 +63,8 @@ def do_hyperparameter_evaluation(
             )
 
             accuracy_matrix[i, j] = validation_precision
-        print(validation_precision)
+
+        print(f"Validation precision for the best model: {validation_precision}")
 
     make_heatmap(accuracy_matrix, hyperparameter1, hyperparameter2)
 
