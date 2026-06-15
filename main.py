@@ -1,8 +1,9 @@
 import numpy as np
 from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95
-from hyperparameter_tuning import do_hyperparameter_evaluation
+from hyperparameter_tuning import do_hyperparameter_evaluation, make_heatmap
 from preprocessing import preprocess
 from train import get_scores, train_loop
+import torch
 
 EPOCHS = 100
 BATCH_SIZE = 1024
@@ -65,6 +66,24 @@ def main():
         epochs=EPOCHS,
         print_freq=PRINT_FREQ,
     )
+
+    # checkpoints =["runs/WideResNet-40-2_0.1_0.01/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.1_0.02/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.1_0.05/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.01_0.01/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.01_0.02/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.01_0.05/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.001_0.01/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.001_0.02/_logit-normalizationmodel_best.pth.tar",
+    # "runs/WideResNet-40-2_0.001_0.05/_logit-normalizationmodel_best.pth.tar"
+    # ]
+
+    # for path in checkpoints:
+    #     checkpoint = torch.load(path)
+    #     print(checkpoint[ "best_prec1"], path)
+
+    # a = [[17.504235388800492, 23.884810942569604, 36.64596318094694], [17.504235388800492, 23.884810942569604, 36.64596318094694], [17.504235388800492, 23.884810942569604, 36.64596318094694]]
+    # make_heatmap(a, HP1, HP2)
     
     # -------- Training the models and evaluate on the validation sets --------
     # ID models

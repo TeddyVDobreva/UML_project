@@ -102,5 +102,5 @@ def make_heatmap(
     plt.title("Heatmap")
     plt.ylabel(hp1_name)
     plt.xlabel(hp2_name)
-    plt.savefig(f"plots/heatmap_{hp1_name}_{hp2_name}")
+    plt.savefig(f"images/heatmap_{hp1_name}_{hp2_name}")
     plt.close()
