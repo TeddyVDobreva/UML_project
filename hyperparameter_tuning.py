@@ -3,9 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
 from preprocessing import preprocess
-
 from train import train_loop
 
 EPOCHS = 100
@@ -24,6 +22,7 @@ LOGNORM_TEMP = 1
 
 HP1 = {"lr": [0.001, 0.01, 0.1]}
 HP2 = {"lognorm_temperature": [0.01, 0.02, 0.05]}
+
 
 def do_hyperparameter_evaluation(
     model_name: str,
@@ -125,6 +124,7 @@ def make_heatmap(
     plt.savefig(f"images/heatmap_{hp1_name}_{hp2_name}")
     plt.close()
 
+
 # Running the hyperparameter tuning
 if __name__ == "__main__":
     # -------- Preprocess ID data --------
@@ -158,5 +158,3 @@ if __name__ == "__main__":
         epochs=EPOCHS,
         print_freq=PRINT_FREQ,
     )
-
-
