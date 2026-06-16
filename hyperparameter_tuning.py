@@ -4,8 +4,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
+from preprocessing import preprocess
+
 from train import train_loop
 
+EPOCHS = 100
+BATCH_SIZE = 1024
+LR = 0.1
+MOMENTUM = 0.9
+NESTEROV = True
+DECAY = 5e-4
+PRINT_FREQ = 10
+LAYERS = 40
+WIDE_LAYERS = 2
+DROPRATE = 0.3
+NAME = "WideResNet-40-2"
+NUM_CLASSES = 22
+LOGNORM_TEMP = 1
+
+HP1 = {"lr": [0.001, 0.01, 0.1]}
+HP2 = {"lognorm_temperature": [0.01, 0.02, 0.05]}
 
 def do_hyperparameter_evaluation(
     model_name: str,
@@ -106,3 +124,39 @@ def make_heatmap(
     plt.xlabel(hp2_name)
     plt.savefig(f"images/heatmap_{hp1_name}_{hp2_name}")
     plt.close()
+
+# Running the hyperparameter tuning
+if __name__ == "__main__":
+    # -------- Preprocess ID data --------
+    (
+        ID_train_images,
+        ID_val_images,
+        _,
+        ID_train_labels,
+        ID_val_labels,
+        _,
+    ) = preprocess("datasets/sea_creatures")
+
+    # -------- Hyper-parameter tuning --------
+    do_hyperparameter_evaluation(
+        model_name=NAME,
+        hyperparameter1=HP1,
+        hyperparameter2=HP2,
+        train_images=ID_train_images,
+        train_labels=ID_train_labels,
+        validation_images=ID_val_images,
+        validation_labels=ID_val_labels,
+        loss="logit-normalization",
+        num_classes=NUM_CLASSES,
+        num_layers=LAYERS,
+        num_wide_layers=WIDE_LAYERS,
+        droprate=DROPRATE,
+        decay=DECAY,
+        optimizer_momentum=MOMENTUM,
+        nesterov=NESTEROV,
+        batch_size=BATCH_SIZE,
+        epochs=EPOCHS,
+        print_freq=PRINT_FREQ,
+    )
+
+
