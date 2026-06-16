@@ -1,7 +1,7 @@
 import numpy as np
-
+import torch
 from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95
-from hyperparameter_tuning import do_hyperparameter_evaluation
+from models import WideResNet
 from preprocessing import preprocess
 from train import get_scores, train_loop
 
@@ -17,10 +17,7 @@ WIDE_LAYERS = 2
 DROPRATE = 0.3
 NAME = "WideResNet-40-2"
 NUM_CLASSES = 22
-LOGNORM_TEMP = 1
-
-HP1 = {"lr": [0.001, 0.01, 0.1]}
-HP2 = {"lognorm_temperature": [0.01, 0.02, 0.05]}
+LOGNORM_TEMP = 0.05
 
 
 def main():
@@ -45,30 +42,8 @@ def main():
 
     print("Preprocessing done!")
 
-    # -------- Hyper-parameter tuning --------
-    do_hyperparameter_evaluation(
-        model_name=NAME,
-        hyperparameter1=HP1,
-        hyperparameter2=HP2,
-        train_images=ID_train_images,
-        train_labels=ID_train_labels,
-        validation_images=ID_val_images,
-        validation_labels=ID_val_labels,
-        loss="logit-normalization",
-        num_classes=NUM_CLASSES,
-        num_layers=LAYERS,
-        num_wide_layers=WIDE_LAYERS,
-        droprate=DROPRATE,
-        decay=DECAY,
-        optimizer_momentum=MOMENTUM,
-        nesterov=NESTEROV,
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
-        print_freq=PRINT_FREQ,
-    )
-
     # -------- Training the models and evaluate on the validation sets --------
-    # ID models
+    # train baseline CE model
     ID_model_ce, _ = train_loop(
         ID_train_images,
         ID_train_labels,
@@ -90,26 +65,17 @@ def main():
         print_freq=PRINT_FREQ,
     )
 
-    ID_model_ln, _ = train_loop(
-        ID_train_images,
-        ID_train_labels,
-        ID_val_images,
-        ID_val_labels,
-        loss="logit-normalization",
-        num_classes=NUM_CLASSES,
-        model_name=NAME,
-        num_layers=LAYERS,
-        num_wide_layers=WIDE_LAYERS,
-        droprate=DROPRATE,
-        lr=LR,
-        decay=DECAY,
-        optimizer_momentum=MOMENTUM,
-        nesterov=NESTEROV,
-        lognorm_temperature=LOGNORM_TEMP,
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
-        print_freq=PRINT_FREQ,
+    # Load the best LogiNorm model from hyperparameter tuning.
+    best_model_path = (
+        "runs/WideResNet-40-2_0.1_0.05/_logit-normalizationmodel_best.pth.tar"
     )
+    ID_model_ln = WideResNet(
+        LAYERS,
+        NUM_CLASSES,
+        WIDE_LAYERS,
+        dropRate=DROPRATE,
+    )
+    ID_model_ln.load_state_dict(torch.load(best_model_path)["state_dict"])
 
     # ---------------- Evaluate the models ----------------
 
