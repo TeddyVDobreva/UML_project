@@ -2,7 +2,8 @@ import json
 
 import numpy as np
 import torch
-from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95
+
+from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95, plot_confidence
 from models import WideResNet
 from preprocessing import preprocess
 from train import get_scores, train_loop
@@ -45,7 +46,7 @@ def main():
     print("Preprocessing done!")
 
     # -------- Training the models and evaluate on the validation sets --------
-    # train baseline CE model
+    # Train baseline CE model
     ID_model_ce, _ = train_loop(
         ID_train_images,
         ID_train_labels,
@@ -66,6 +67,11 @@ def main():
         epochs=EPOCHS,
         print_freq=PRINT_FREQ,
     )
+
+    # Load the baseline model from saved runs.
+    # ce_model_path = "runs/WideResNet-40-2/_cross-entropymodel_best.pth.tar"
+    # ID_model_ce = WideResNet(LAYERS, NUM_CLASSES, WIDE_LAYERS, dropRate=DROPRATE)
+    # ID_model_ce.load_state_dict(torch.load(ce_model_path)["state_dict"])
 
     # Load the best LogiNorm model from hyperparameter tuning.
     best_model_path = (
@@ -121,6 +127,10 @@ def main():
     # Accuracy of the model on the ID test set
     acc_CE = eval_acc(ID_test_labels, ID_preds_ce)
     acc_LN = eval_acc(ID_test_labels, ID_preds_ln)
+
+    # Confidence scores plot
+    plot_confidence(ID_scores_ce, OOD_scores_ce, "cross entropy")
+    plot_confidence(ID_scores_ln, OOD_scores_ln, "logit normalization")
 
     # ---------------- Save results ----------------
     results_CE = {
