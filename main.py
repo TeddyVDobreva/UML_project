@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import torch
 from evaluation import eval_acc, eval_aupr, eval_auroc, eval_fpr95
@@ -95,32 +97,57 @@ def main():
     combined_scores_ln = np.concatenate([ID_scores_ln, OOD_scores_ln])
 
     # FPR95
-    eval_fpr95(
+    fpr95_CE = eval_fpr95(
         ID_test_labels,
         ID_scores_ce,
         OOD_test_labels,
         OOD_scores_ce,
-        "cross_entropy",
     )
-    eval_fpr95(
+    fpr95_LN = eval_fpr95(
         ID_test_labels,
         ID_scores_ln,
         OOD_test_labels,
         OOD_scores_ln,
-        "logit_normalization",
     )
 
     # AUROC
-    eval_auroc(y_OOD, combined_scores_ce, "cross entropy")
-    eval_auroc(y_OOD, combined_scores_ln, "logit normalization")
+    auroc_CE = eval_auroc(y_OOD, combined_scores_ce, "cross entropy")
+    auroc_LN = eval_auroc(y_OOD, combined_scores_ln, "logit normalization")
 
     # AUPR
-    eval_aupr(y_OOD, combined_scores_ce, "cross entropy")
-    eval_aupr(y_OOD, combined_scores_ln, "logit normalization")
+    aupr_CE = eval_aupr(y_OOD, combined_scores_ce, "cross entropy")
+    aupr_LN = eval_aupr(y_OOD, combined_scores_ln, "logit normalization")
 
     # Accuracy of the model on the ID test set
-    eval_acc(ID_test_labels, ID_preds_ce, "cross entropy")
-    eval_acc(ID_test_labels, ID_preds_ln, "logit normalization")
+    acc_CE = eval_acc(ID_test_labels, ID_preds_ce)
+    acc_LN = eval_acc(ID_test_labels, ID_preds_ln)
+
+    # ---------------- Save results ----------------
+    results_CE = {
+        "loss:": "CE",
+        "FPR95:": fpr95_CE,
+        "AUROC:": auroc_CE,
+        "AUPR:": aupr_CE,
+        "Accuracy:": acc_CE,
+    }
+
+    with open("results_CE.json", "w") as f:
+        json.dump(results_CE, f, indent=4)
+
+    print("Results of WRN-40-2 with Cross-Entropy loss saved to results_CE.json")
+
+    results_LN = {
+        "loss:": "LN",
+        "FPR95:": fpr95_LN,
+        "AUROC:": auroc_LN,
+        "AUPR:": aupr_LN,
+        "Accuracy:": acc_LN,
+    }
+
+    with open("results_LN.json", "w") as f:
+        json.dump(results_LN, f, indent=4)
+
+    print("Results of WRN-40-2 with Logit-Normalization loss saved to results_CE.json")
 
 
 # Run the main function

@@ -10,19 +10,18 @@ from sklearn.metrics import (
 )
 
 
-def load_df(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> pd.DataFrame:
+def load_df(y_test: np.ndarray, scores: np.ndarray) -> pd.DataFrame:
     """
     Loads the model predictions and true labels into a DataFrame.
 
     Args:
         y_test (np.ndarray): the true labels for the test set.
         scores (np.ndarray): the predicted scores for the test set.
-        loss_name (str): the name of the loss function.
 
     Returns:
         pd.DataFrame: a DataFrame containing the true labels and model predictions.
     """
-    return pd.DataFrame({"True": y_test, f"{loss_name}": scores})
+    return pd.DataFrame({"True": y_test, "Predictions": scores})
 
 
 def eval_fpr95(
@@ -30,8 +29,7 @@ def eval_fpr95(
     ID_scores: np.ndarray,
     OOD_y_test: np.ndarray,
     OOD_scores: np.ndarray,
-    loss_name: str,
-) -> str:
+) -> float:
     """
     Evaluation metric that shows the false positive rate (FPR) of OOD examples,
     when the true positive rate (TPR) of ID examples is 95%.
@@ -41,10 +39,9 @@ def eval_fpr95(
         ID_scores (np.ndarray): the predicted scores for the ID test set.
         OOD_y_test (np.ndarray): the true labels for the OOD test set.
         OOD_scores (np.ndarray): the predicted scores for the OOD test set.
-        loss_name (str): the name of the loss function.
 
     Returns:
-        str: the FPR95 score.
+        float: the FPR95 score.
     """
     y_true = np.concatenate([np.ones(len(ID_y_test)), np.zeros(len(OOD_y_test))])
     y_scores = np.concatenate([ID_scores, OOD_scores])
@@ -52,10 +49,10 @@ def eval_fpr95(
     fpr, tpr, _ = roc_curve(y_true, y_scores)
     fpr95 = fpr[np.where(tpr >= 0.95)[0][0]]
 
-    return f"FPR95 for WRN with {loss_name} loss: {fpr95:.4f}"
+    return fpr95
 
 
-def eval_auroc(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
+def eval_auroc(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> float:
     """
     Evaluation metric that shows the area under the ROC curve (AUROC).
 
@@ -65,11 +62,11 @@ def eval_auroc(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
         loss_name (str): the name of the loss function.
 
     Returns:
-        str: the AUROC score.
+        float: the AUROC score.
     """
-    test_df = load_df(y_test, scores, loss_name)
+    test_df = load_df(y_test, scores)
 
-    fpr, tpr, _ = roc_curve(test_df["True"], test_df[loss_name])
+    fpr, tpr, _ = roc_curve(test_df["True"], test_df["Predictions"])
     roc_auc = auc(fpr, tpr)
 
     plt.figure(figsize=(8, 6))
@@ -82,10 +79,10 @@ def eval_auroc(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
     plt.savefig(f"images/auroc_{loss_name}.png")
     plt.close()
 
-    return f"AUROC for WRN with {loss_name} loss: {roc_auc:.4f}"
+    return roc_auc
 
 
-def eval_aupr(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
+def eval_aupr(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> float:
     """
     Evaluation metric that shows the area under the precision-recall curve (AUPR).
 
@@ -95,14 +92,14 @@ def eval_aupr(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
         loss_name (str): the name of the loss function.
 
     Returns:
-        str: the AUPR score.
+        float: the AUPR score.
     """
-    test_df = load_df(y_test, scores, loss_name)
+    test_df = load_df(y_test, scores)
 
     precision, recall, _ = precision_recall_curve(
-        test_df["True"], test_df[f"{loss_name}"]
+        test_df["True"], test_df["Predictions"]
     )
-    pr_ap = average_precision_score(test_df["True"], test_df[loss_name])
+    pr_ap = average_precision_score(test_df["True"], test_df["Predictions"])
 
     plt.figure(figsize=(8, 6))
     plt.plot(recall, precision, label=f"{loss_name} (AP = {pr_ap:.4f})")
@@ -115,23 +112,22 @@ def eval_aupr(y_test: np.ndarray, scores: np.ndarray, loss_name: str) -> str:
     plt.savefig(f"images/aupr_{loss_name}.png")
     plt.close()
 
-    return f"AUPR for WRN with {loss_name} loss: {pr_ap:.4f}"
+    return pr_ap
 
 
-def eval_acc(y_test: np.ndarray, preds: np.ndarray, loss_name: str) -> str:
+def eval_acc(y_test: np.ndarray, preds: np.ndarray) -> float:
     """
     Evaluation metric that shows the accuracy of the model.
 
     Args:
         y_test (np.ndarray): the true labels for the test set.
         preds (np.ndarray): the predicted labels for the test set.
-        loss_name (str): the name of the loss function.
 
     Returns:
-        str: the accuracy score.
+        float: the accuracy score.
     """
-    test_df = load_df(y_test, preds, loss_name)
+    test_df = load_df(y_test, preds)
 
-    acc = accuracy_score(test_df["True"], test_df[f"{loss_name}"])
+    acc = accuracy_score(test_df["True"], test_df["Predictions"])
 
-    return f"Accuracy for {loss_name}: {acc:.4f}"
+    return acc
