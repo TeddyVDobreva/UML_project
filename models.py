@@ -23,9 +23,6 @@ class BasicBlock(nn.Module):
             out_planes (int): Output channels at the module.
             stride (int): Number of times a kernel is moved.
             dropRate (float): Drop rate in the module. Defaults to 0.0.
-
-        Returns:
-            None: Initializes the BasicBlock class.
         """
         super(BasicBlock, self).__init__()
 
@@ -60,9 +57,6 @@ class BasicBlock(nn.Module):
 
         Args:
             x (Tensor): Input to the layer.
-
-        Returns:
-            Tensor: Output of the layer.
         """
         if not self.equalInOut:
             x = self.relu1(self.bn1(x))
@@ -179,9 +173,6 @@ class WideResNet(nn.Module):
             num_classes (int): Number of classes.
             widen_factor (int): Widening factor. Defaults to 1.
             dropRate (float): Drop rate of the network. Defaults to 0.0.
-
-        Returns:
-            None: Initializes the WideResNet class.
         """
         super(WideResNet, self).__init__()
         nChannels = [16, 16 * widen_factor, 32 * widen_factor, 64 * widen_factor]

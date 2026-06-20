@@ -10,15 +10,13 @@ import seaborn as sns
 from PIL import Image
 
 
-def _plot_gray_hist(images: list[Image], dataset_name) -> None:
+def _plot_gray_hist(images: list[Image], dataset_name :str) -> None:
     """
     Plots and saves the gray histogram of an image.
 
     Args:
         images (list[Image]): a list of images.
-
-    Returns:
-        None: Plots and saves the histogram.
+        dataset_name (str): the name of the dataset.
     """
     for i in range(len(images)):
         g = cv2.cvtColor(np.array(images[i]), cv2.COLOR_BGR2GRAY)
@@ -60,9 +58,6 @@ def _plot_image_dims(images: list[Image], dataset_name: str) -> None:
     Args:
         images (list[Image]): List of images for which to plot dimensions.
         dataset_name (str): the name of the dataset.
-
-    Returns:
-        None: Displays and saves the plots.
     """
     counter = Counter()
 
@@ -89,9 +84,6 @@ def do_analysis(path: str) -> None:
 
     Args:
         path (str): The path to a folder with the image data.
-
-    Returns:
-        None: Displays and saves the plots of image dimensions.
     """
     dataset_name = path.split("/")[-1]
     plot_composition(dataset_name, path)
@@ -107,9 +99,6 @@ def plot_composition(dataset_name: str, dataset_path: str) -> None:
     Args:
         dataset_name (str): The name of the dataset (used for labeling the plot).
         dataset_path (str): The path to the dataset directory.
-
-    Returns:
-        None: Displays and saves the plot of dataset composition.
 
     Raises:
         ValueError: If dataset_name is not 'reptiles' or 'sea_creatures
