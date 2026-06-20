@@ -131,3 +131,46 @@ def eval_acc(y_test: np.ndarray, preds: np.ndarray) -> float:
     acc = accuracy_score(test_df["True"], test_df["Predictions"])
 
     return acc
+
+
+def plot_confidence(
+    ID_scores: np.ndarray, OOD_scores: np.ndarray, loss_name: str
+) -> None:
+    """
+    Plots histograms of max-softmax confidence scores for ID and OOD samples.
+
+    Args:
+        ID_scores (np.ndarray): Max-softmax confidence scores for ID test samples.
+        OOD_scores (np.ndarray): Max-softmax confidence scores for OOD test samples.
+        loss_name (str): Name of the loss function.
+
+    Returns:
+        None: Saves the histogram plot to disk.
+    """
+    plt.figure(figsize=(8, 6))
+    bins = np.linspace(0, 1, 50)
+
+    plt.hist(
+        ID_scores,
+        bins=bins,
+        alpha=0.6,
+        label="ID",
+        color="tab:blue",
+        density=True,
+    )
+
+    plt.hist(
+        OOD_scores,
+        bins=bins,
+        alpha=0.6,
+        label="OOD",
+        color="tab:red",
+        density=True,
+    )
+
+    plt.xlabel("Max Softmax Probability")
+    plt.ylabel("Density")
+    plt.title(f"Confidence Distribution for WRN with {loss_name} loss")
+    plt.legend()
+    plt.savefig(f"images/confidence_hist_{loss_name}.png")
+    plt.close()
